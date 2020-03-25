@@ -92,10 +92,10 @@ def run_paralle(search_params, collection_name, connection_num, X_test, run_coun
     pool = [MilvusClient(collection_name=collection_name)
             for n in range(connection_num)]
     for pos, search_param in enumerate(search_params, 1):
-        batch_size = int(search_param["testsize"]/connection_num)
-        if batch_size <= 0:
-            print("Error: testsize < clients, skip")
-            return
+        # batch_size = int(search_param["testsize"]/connection_num)
+        # if batch_size <= 0:
+        #     print("Error: testsize < clients, skip")
+        #     return
 
         print("Running search argument group %d of %d..." %
               (pos, len(search_params)))
@@ -117,13 +117,14 @@ def run_paralle(search_params, collection_name, connection_num, X_test, run_coun
                     data = future.result()
                     total_time = total_time if total_time > data["total_time"] else data["total_time"]
                 min_total_time = min_total_time if min_total_time < total_time else total_time
-        average_search_time = min_total_time / (batch_size * connection_num)
+        average_search_time = min_total_time / search_param["testsize"]
         print("QPS: %d\n" % (1.0 / average_search_time))
 
 
 def run_single_query(connect, counter, query, search_param):
     start = time.time()
     while counter.value < search_param["testsize"]:
+        counter.increment()
         connect.query(query, search_param["topk"], search_param=search_param)
     total_time = time.time() - start
     attrs = {"total_time": total_time}
