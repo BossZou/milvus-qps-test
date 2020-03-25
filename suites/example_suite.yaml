@@ -1,15 +1,15 @@
-- name: # unique id
-  collection_scheme: {
-      "collection_name": "ivf_random_l2", # unique table name
-      "dim": 128,
-      "data_size": 1000000,
-      "index_size": 512,
-      "metric_type": "l2", # random data only support L2 now
-      "index_type": "ivf_flat",
-    }
-  build_args: { "nlist": [8192] }
-  search_args:
-    { "testsize": [1, 10, 20, 30], "topk": [1, 10], "nprobe": [1, 20] }
+# - name: # unique id
+#   collection_scheme: {
+#       "collection_name": "ivf_random_l2", # unique table name
+#       "dim": 128,
+#       "data_size": 1000000,
+#       "index_size": 512,
+#       "metric_type": "l2", # random data only support L2 now
+#       "index_type": "ivf_flat",
+#     }
+#   build_args: { "nlist": [8192] }
+#   search_args:
+#     { "testsize": [1, 10, 20, 30], "topk": [1, 10], "nprobe": [1, 20] }
 - name:
   collection_scheme: {
       "collection_name": "ivf_sift1m",
@@ -19,6 +19,6 @@
       "metric_type": "l2",
       "index_type": "ivf_flat",
     }
-  build_args: { "nlist": [8192] }
+  build_args: { "nlist": [2048] }
   search_args:
-    { "testsize": [1, 10, 20, 30], "topk": [1, 10], "nprobe": [1, 20] }
+    { "testsize": [10000], "topk": [10], "nprobe": [16] }

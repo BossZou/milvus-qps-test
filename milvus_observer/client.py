@@ -142,12 +142,14 @@ class MilvusClient(object):
         logger.info("Drop index: %s" % self._collection_name)
         return self._milvus.drop_index(self._collection_name)
 
-    @time_wrapper
+    # @time_wrapper
     def query(self, X, top_k, search_param=None):
-        status, result = self._milvus.search_vectors(
+        # status, result = self._milvus.search_vectors(
+        #     self._collection_name, top_k, query_records=X, params=search_param)
+        # self.check_status(status)
+        self._milvus.search_vectors(
             self._collection_name, top_k, query_records=X, params=search_param)
-        self.check_status(status)
-        return result
+        # return result
 
     def count(self):
         return self._milvus.count_collection(self._collection_name)[1]
