@@ -58,34 +58,8 @@ def run(definition, connection_num, run_count, batch, searchonly):
             run_paralle(
                 search_params, collection_scheme["collection_name"], connection_num, X_test, run_count, batch)
     else:
-        run_paralle(
+        run_paralle_process(
             search_params, collection_scheme["collection_name"], connection_num, X_test, run_count, batch)
-
-
-# def run_paralle(search_params, collection_name, connection_num, X_test, run_count, batch):
-#     pool = [MilvusClient(collection_name=collection_name)
-#             for n in range(connection_num)]
-#     for pos, search_param in enumerate(search_params, 1):
-#         print("Running search argument group %d of %d..." %
-#               (pos, len(search_params)))
-#         print("search_params:", search_param)
-#         if search_param["testsize"] == 1:
-#             query_vector = [X_test[0]]
-#         else:
-#             query_vector = X_test[0:search_param["testsize"]]
-#         min_total_time = float('inf')
-#         for _ in range(run_count):
-#             total_time = float('-inf')
-#             with concurrent.futures.ThreadPoolExecutor(max_workers=connection_num) as executor:
-#                 future_results = {executor.submit(
-#                     run_individual_query, pool[pos], query_vector, search_param, batch): pos for pos in range(connection_num)}
-#                 for future in concurrent.futures.as_completed(future_results):
-#                     data = future.result()
-#                     total_time = total_time if total_time > data["total_time"] else data["total_time"]
-#                 min_total_time = min_total_time if min_total_time < total_time else total_time
-#         average_search_time = min_total_time / \
-#             (connection_num * search_param["testsize"])
-#         print("QPS: %d\n" % (1.0 / average_search_time))
 
 
 def run_paralle(search_params, collection_name, connection_num, X_test, run_count, batch):
@@ -130,16 +104,44 @@ def run_single_query(connect, counter, query, search_param):
     attrs = {"total_time": total_time}
     return attrs
 
-# def run_individual_query(connect, query, search_param, batch):
-#     start = time.time()
-#     if batch:
-#         connect.query(
-#             query, search_param["topk"], search_param=search_param)
-#     else:
-#         [connect.query([x], search_param["topk"],
-#                        search_param=search_param) for x in query]
-#     total = (time.time() - start)
-#     attrs = {
-#         "total_time": total
-#     }
-#     return attrs
+
+def run_paralle_process(search_params, collection_name, connection_num, X_test, run_count, batch):
+    for pos, search_param in enumerate(search_params, 1):
+        print("Running search argument group %d of %d..." %
+              (pos, len(search_params)))
+        print("collection: %s, search_params: %s" %
+              (collection_name, search_param))
+        if search_param["testsize"] == 1:
+            query_vector = [X_test[0]]
+        else:
+            query_vector = X_test[0:search_param["testsize"]]
+
+        test_time = 20
+        max_runs = int('-inf')
+        for _ in range(run_count):
+            start = time.time() + 3
+            end = start + test_time
+            runs = 0
+            with concurrent.futures.ProcessPoolExecutor(max_workers=connection_num) as executor:
+                future_results = {executor.submit(run_single_query_process, collection_name, [
+                                                  query_vector[0]], search_param, start, end)}
+                for future in concurrent.futures.as_completed(future_results):
+                    data = future.result()
+                    runs += data["runs"]
+                max_runs = max_runs if max_runs > runs else runs
+        average_search_time = float(test_time / max_runs)
+        print("QPS: %d\n" % (1.0 / average_search_time))
+
+
+def run_single_query_process(collection_name, query, search_param, starttime, endtime):
+    connect = MilvusClient(collection_name=collection_name)
+    counter = 0
+
+    while time.time() < starttime:
+        pass
+
+    while time.time() < endtime:
+        connect.query(query, search_param["topk"], search_param=search_param)
+        counter += 1
+    attrs = {"runs": counter}
+    return attrs

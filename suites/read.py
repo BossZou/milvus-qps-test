@@ -69,11 +69,13 @@ def Add(counter, x):
         counter.increment(x)
 
 if __name__ == "__main__":
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-        counter = FastReadCounter()
-        future_results = {executor.submit(Add, counter, i) for i in range(2)}
-        for future in concurrent.futures.as_completed(future_results):
-            pass
-    print("finish~")
+    # with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+    #     counter = FastReadCounter()
+    #     future_results = {executor.submit(Add, counter, i) for i in range(2)}
+    #     for future in concurrent.futures.as_completed(future_results):
+    #         pass
+    # print("finish~")
+    print(time.time())
+    print(time.time() + 10)
 
     
