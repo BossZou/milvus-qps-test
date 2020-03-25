@@ -21,7 +21,7 @@ def generate_combinations(args):
                         type(args).__name__)
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # fn = "example_suite.yaml"
     # print("file: %s\n" % (1.0/0.2))
     # with open(fn, 'r') as f:
@@ -44,8 +44,36 @@ if __name__ == "__main__":
     #     end = (pos+1) * batch_size
     #     print("pos %d: from %d to %d" % (pos, start, end))
 
-    fn = "example_query.yaml"
-    with open(fn, 'r') as f:
-        definitions = yaml.load(f, yaml.SafeLoader)
-    for point in definitions:
-        print("params:", point)
+    # fn = "example_query.yaml"
+    # with open(fn, 'r') as f:
+    #     definitions = yaml.load(f, yaml.SafeLoader)
+    # for point in definitions:
+    #     print("params:", point)
+
+
+import threading
+import concurrent.futures
+class FastReadCounter(object):
+    def __init__(self, step=1):
+        self.value = 0
+        self._step = step
+        self._lock = threading.Lock()
+
+    def increment(self, x):
+        with self._lock:
+            self.value += self._step
+            print(f"value: {self.value}, t: {x}")
+            
+def Add(counter, x):
+    while counter.value < 100:
+        counter.increment(x)
+
+if __name__ == "__main__":
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        counter = FastReadCounter()
+        future_results = {executor.submit(Add, counter, i) for i in range(2)}
+        for future in concurrent.futures.as_completed(future_results):
+            pass
+    print("finish~")
+
+    

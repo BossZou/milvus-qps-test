@@ -1,5 +1,6 @@
 import argparse
 import yaml
+import threading
 from itertools import product
 
 
@@ -35,3 +36,14 @@ def get_definition_from_yaml(fn):
     with open(fn, 'r') as f:
         definitions = yaml.load(f, yaml.SafeLoader)
     return definitions
+
+
+class FastReadCounter(object):
+    def __init__(self, step=1):
+        self.value = 0
+        self._step = step
+        self._lock = threading.Lock()
+
+    def increment(self):
+        with self._lock:
+            self.value += self._step

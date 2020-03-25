@@ -10,6 +10,7 @@ import numpy
 from milvus_observer.client import MilvusClient
 from milvus_observer.dataset import get_dataset
 from milvus_observer.utils import generate_combinations
+from milvus_observer.utils import FastReadCounter
 
 INSERT_INTERVAL = 50000
 
@@ -107,10 +108,11 @@ def run_paralle(search_params, collection_name, connection_num, X_test, run_coun
 
         min_total_time = float('inf')
         for _ in range(run_count):
+            counter = FastReadCounter()
             total_time = float('-inf')
             with concurrent.futures.ThreadPoolExecutor(max_workers=connection_num) as executor:
                 future_results = {executor.submit(
-                    run_individual_query, pool[pos], query_vector[(pos * batch_size):(pos*batch_size + batch_size)], search_param, batch): pos for pos in range(connection_num)}
+                    run_single_query, pool[pos], counter, [query_vector[0]], search_param): pos for pos in range(connection_num)}
                 for future in concurrent.futures.as_completed(future_results):
                     data = future.result()
                     total_time = total_time if total_time > data["total_time"] else data["total_time"]
@@ -119,16 +121,24 @@ def run_paralle(search_params, collection_name, connection_num, X_test, run_coun
         print("QPS: %d\n" % (1.0 / average_search_time))
 
 
-def run_individual_query(connect, query, search_param, batch):
+def run_single_query(connect, counter, query, search_param):
     start = time.time()
-    if batch:
-        connect.query(
-            query, search_param["topk"], search_param=search_param)
-    else:
-        [connect.query([x], search_param["topk"],
-                       search_param=search_param) for x in query]
-    total = (time.time() - start)
-    attrs = {
-        "total_time": total
-    }
+    while counter.value < search_param["testsize"]:
+        connect.query(query, search_param["topk"], search_param=search_param)
+    total_time = time.time() - start
+    attrs = {"total_time": total_time}
     return attrs
+
+# def run_individual_query(connect, query, search_param, batch):
+#     start = time.time()
+#     if batch:
+#         connect.query(
+#             query, search_param["topk"], search_param=search_param)
+#     else:
+#         [connect.query([x], search_param["topk"],
+#                        search_param=search_param) for x in query]
+#     total = (time.time() - start)
+#     attrs = {
+#         "total_time": total
+#     }
+#     return attrs
