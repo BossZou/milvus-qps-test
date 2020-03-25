@@ -117,14 +117,15 @@ def run_paralle_process(search_params, collection_name, connection_num, X_test, 
             query_vector = X_test[0:search_param["testsize"]]
 
         test_time = 20
-        max_runs = int('-inf')
+        max_runs = 0
         for _ in range(run_count):
             start = time.time() + 3
             end = start + test_time
             runs = 0
             with concurrent.futures.ProcessPoolExecutor(max_workers=connection_num) as executor:
                 future_results = {executor.submit(run_single_query_process, collection_name, [
-                                                  query_vector[0]], search_param, start, end)}
+                                                  query_vector[0]],
+                                                  search_param, start, end) : i for i in range(connection_num)}
                 for future in concurrent.futures.as_completed(future_results):
                     data = future.result()
                     runs += data["runs"]
@@ -144,4 +145,5 @@ def run_single_query_process(collection_name, query, search_param, starttime, en
         connect.query(query, search_param["topk"], search_param=search_param)
         counter += 1
     attrs = {"runs": counter}
+    print("runs: ", counter)
     return attrs
